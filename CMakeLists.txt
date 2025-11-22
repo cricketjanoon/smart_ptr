@@ -12,37 +12,49 @@ include(CMakePackageConfigHelpers)
 
 add_library(smart_ptr INTERFACE)
 
-install(TARGETS smart_ptr 
-        EXPORT smart_ptrTargets 
-        LIBRARY DESTINATION lib 
-        ARCHIVE DESTINATION lib 
-        RUNTIME DESTINATION bin)
+# Set target properties for INTERFACE library
+target_include_directories(smart_ptr INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
-install(DIRECTORY include/ DESTINATION include)
+# Install header files
+install(FILES include/smart_ptr.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
+# Install the target
+install(TARGETS smart_ptr
+    EXPORT smart_ptrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Install the export targets
+install(EXPORT smart_ptrTargets
+    FILE smart_ptrTargets.cmake
+    NAMESPACE smart_ptr::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/smart_ptr
+)
+
+# Create and install package config file
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/smart_ptrConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/smart_ptrConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/smart_ptr
+    PATH_VARS
+)
+
+# Create and install version file
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/smart_ptrConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
+    COMPATIBILITY SameMajorVersion
 )
-
-install(EXPORT smart_ptrTargets FILE smart_ptrTargets.cmake 
-        NAMESPACE smart_ptr:: DESTINATION lib/cmake/smart_ptr)
 
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/smart_ptrConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/smart_ptrConfigVersion.cmake"
-    DESTINATION lib/cmake/smart_ptr
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/smart_ptr
 )
-
-# Add a test executable if the smart_ptr library is available
-find_package(smart_ptr)
-if(TARGET smart_ptr::smart_ptr)
-    message(STATUS "smart_ptr library is available.")
-    add_executable(test_smartptr test/test_main.cpp)
-    target_link_libraries(test_smartptr PRIVATE smart_ptr::smart_ptr)
-else()
-    message(WARNING "smart_ptr library is not available. Test executable will not be built.")
-endif()
